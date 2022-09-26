@@ -45,6 +45,13 @@ if [ -n "$PIKERNELMODDIR" ] ; then
     fi
 fi
 
+if [ -n "$NXPWIFIDRIVERDIR" ] ; then
+    if [ ! -d "$NXPWIFIDRIVERDIR" ] ; then
+        echo 1>&2 "NXPWIFIDRIVERDIR defined as $NXPWIFIDRIVERDIR, but folder not found on disk."
+        exit 1
+    fi
+fi
+
 INSTDIR=$(dirname "$0")
 if [ "${INSTDIR#/}" == "$INSTDIR" ] ; then INSTDIR="$PWD/$INSTDIR" ; fi
 INSTDIR=${INSTDIR%%/debian}
@@ -90,6 +97,10 @@ for kernel_version in $kernel_versions; do
       (cd linux; make "${make_opts[@]}" M="$PIKERNELMODDIR" modules)
     fi
 
+    if [ -d "$NXPWIFIDRIVERDIR" ]; then
+      (cd linux; make "${make_opts[@]}" M="$NXPWIFIDRIVERDIR" modules)
+    fi
+
     # install kernel
     cp "$builddir/arch/arm/boot/zImage" "$INSTDIR/boot/kernel${kernel_version/6/}.img"
 
@@ -97,6 +108,10 @@ for kernel_version in $kernel_versions; do
     if [ -d "$PIKERNELMODDIR" ] ; then
       (cd linux; make "${make_opts[@]}" -j$NPROC modules_install INSTALL_MOD_PATH="$INSTDIR/modules" M="$PIKERNELMODDIR")
     fi
+    if [ -d "$NXPWIFIDRIVERDIR" ]; then
+      (cd linux; make "${make_opts[@]}" -j$NPROC modules_install INSTALL_MOD_PATH="$INSTDIR/modules" M="$NXPWIFIDRIVERDIR")
+    fi
+
     (cd linux; make "${make_opts[@]}" -j$NPROC modules_install INSTALL_MOD_PATH="$INSTDIR/modules")
     mv "$INSTDIR/modules/lib/modules"/* "$INSTDIR/modules"
     rm -r "$INSTDIR/modules/lib"
